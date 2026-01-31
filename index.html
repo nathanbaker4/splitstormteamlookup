@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>SplitStorm – Taaaaaeam Viewer</title>
+  <title>SplitStorm – Team Viewer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <style>
@@ -69,27 +69,18 @@
   <div class="card">
     <h2>Team Data Viewer</h2>
 
-    <input
-      id="teamCode"
-      placeholder="Enter team code"
-      autocomplete="off"
-    />
-
+    <input id="teamCode" placeholder="Enter team code" autocomplete="off" />
     <button onclick="loadTeam()">View Team</button>
 
     <div id="error" class="error"></div>
     <pre id="output"></pre>
   </div>
 
-  <!-- Firebase SDK -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import {
-      getFirestore,
-      doc,
-      getDoc
-    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+  <!-- Firebase Compat SDK (GitHub Pages Safe) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
+  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDVId5l4TinAp06bZA8gId1kZ88ittf8c0",
       authDomain: "splitstorm1.firebaseapp.com",
@@ -100,10 +91,10 @@
       measurementId: "G-VKB2V4KZ12"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-    window.loadTeam = async () => {
+    async function loadTeam() {
       const teamCode = document.getElementById("teamCode").value.trim();
       const output = document.getElementById("output");
       const error = document.getElementById("error");
@@ -117,11 +108,9 @@
       }
 
       try {
-        // 🔧 CHANGE "teams" if your collection name is different
-        const ref = doc(db, "teams", teamCode);
-        const snap = await getDoc(ref);
+        const snap = await db.collection("teams").doc(teamCode).get();
 
-        if (!snap.exists()) {
+        if (!snap.exists) {
           error.textContent = "No team found with that code.";
           return;
         }
@@ -131,7 +120,7 @@
         console.error(err);
         error.textContent = "Failed to load team data.";
       }
-    };
+    }
   </script>
 </body>
 </html>
