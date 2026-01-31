@@ -66,49 +66,52 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
   import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyDVId5l4TinAp06bZA8gId1kZ88ittf8c0",
-    authDomain: "splitstorm1.firebaseapp.com",
-    projectId: "splitstorm1",
-    storageBucket: "splitstorm1.firebasestorage.app",
-    messagingSenderId: "1020688870854",
-    appId: "1:1020688870854:web:123fef34436238b9b056c7",
-    measurementId: "G-VKB2V4KZ12"
-  };
+  document.addEventListener("DOMContentLoaded", () => {
 
-  // ✅ Initialize Firebase FIRST
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+    const firebaseConfig = {
+      apiKey: "AIzaSyDVId5l4TinAp06bZA8gId1kZ88ittf8c0",
+      authDomain: "splitstorm1.firebaseapp.com",
+      projectId: "splitstorm1",
+      storageBucket: "splitstorm1.firebasestorage.app",
+      messagingSenderId: "1020688870854",
+      appId: "1:1020688870854:web:123fef34436238b9b056c7",
+      measurementId: "G-VKB2V4KZ12"
+    };
 
-  // ✅ Add event listener AFTER db exists
-  document.getElementById("viewTeamBtn").addEventListener("click", loadTeam);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-  async function loadTeam() {
-    const code = document.getElementById("teamCodeInput").value.trim();
+    const button = document.getElementById("viewTeamBtn");
     const output = document.getElementById("output");
 
-    if (!code) {
-      output.innerText = "Please enter a team code.";
-      return;
-    }
+    button.addEventListener("click", async () => {
+      const code = document.getElementById("teamCodeInput").value.trim();
 
-    output.innerText = "Loading...";
-
-    try {
-      const ref = doc(db, "teams", code);
-      const snap = await getDoc(ref);
-
-      if (!snap.exists()) {
-        output.innerText = "Team not found.";
+      if (!code) {
+        output.innerText = "Please enter a team code.";
         return;
       }
 
-      output.innerText = JSON.stringify(snap.data(), null, 2);
-    } catch (e) {
-      output.innerText = "Error loading team: " + e.message;
-    }
-  }
+      output.innerText = "Loading...";
+
+      try {
+        const ref = doc(db, "teams", code);
+        const snap = await getDoc(ref);
+
+        if (!snap.exists()) {
+          output.innerText = "Team not found.";
+          return;
+        }
+
+        output.innerText = JSON.stringify(snap.data(), null, 2);
+      } catch (e) {
+        output.innerText = "Error loading team: " + e.message;
+      }
+    });
+
+  });
 </script>
+
 
 
 
