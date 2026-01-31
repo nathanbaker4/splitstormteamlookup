@@ -61,30 +61,27 @@
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js"></script>
-
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
   import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
-  document.addEventListener("DOMContentLoaded", () => {
+  const firebaseConfig = {
+    apiKey: "AIzaSyDVId5l4TinAp06bZA8gId1kZ88ittf8c0",
+    authDomain: "splitstorm1.firebaseapp.com",
+    projectId: "splitstorm1",
+    storageBucket: "splitstorm1.firebasestorage.app",
+    messagingSenderId: "1020688870854",
+    appId: "1:1020688870854:web:123fef34436238b9b056c7",
+    measurementId: "G-VKB2V4KZ12"
+  };
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDVId5l4TinAp06bZA8gId1kZ88ittf8c0",
-      authDomain: "splitstorm1.firebaseapp.com",
-      projectId: "splitstorm1",
-      storageBucket: "splitstorm1.firebasestorage.app",
-      messagingSenderId: "1020688870854",
-      appId: "1:1020688870854:web:123fef34436238b9b056c7",
-      measurementId: "G-VKB2V4KZ12"
-    };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+  const button = document.getElementById("viewTeamBtn");
+  const output = document.getElementById("output");
 
-    const button = document.getElementById("viewTeamBtn");
-    const output = document.getElementById("output");
-
-    button.addEventListener("click", async () => {
+  button.addEventListener("click", async () => {
       const code = document.getElementById("teamCodeInput").value.trim();
 
       if (!code) {
@@ -108,8 +105,6 @@
         output.innerText = "Error loading team: " + e.message;
       }
     });
-
-  });
 </script>
 
 
