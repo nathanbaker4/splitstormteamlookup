@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Team Viewer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #1e1e1e;
+      color: white;
+      padding: 40px;
+    }
+    #container {
+      max-width: 500px;
+      margin: auto;
+      background: #2a2a2a;
+      padding: 20px;
+      border-radius: 10px;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 6px;
+      border: none;
+      font-size: 16px;
+    }
+    button {
+      margin-top: 15px;
+      width: 100%;
+      padding: 10px;
+      background: #4caf50;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    #output {
+      margin-top: 20px;
+      padding: 15px;
+      background: #333;
+      border-radius: 8px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+
+<div id="container">
+  <h1>Team Viewer</h1>
+  <p>Enter a team code to view its data.</p>
+
+  <input id="teamCodeInput" placeholder="Team code">
+  <button onclick="loadTeam()">View Team</button>
+
+  <div id="output"></div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js"></script>
+
+<script>
+  // TODO: Replace with your Firebase config
+  const firebaseConfig = {
+      apiKey: "AIzaSyDVId5l4TinAp06bZA8gId1kZ88ittf8c0",
+      authDomain: "splitstorm1.firebaseapp.com",
+      projectId: "splitstorm1",
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  async function loadTeam() {
+    const code = document.getElementById("teamCodeInput").value.trim();
+    const output = document.getElementById("output");
+
+    if (!code) {
+      output.innerText = "Please enter a team code.";
+      return;
+    }
+
+    output.innerText = "Loading...";
+
+    try {
+      const doc = await db.collection("teams").doc(code).get();
+
+      if (!doc.exists) {
+        output.innerText = "Team not found.";
+        return;
+      }
+
+      const data = doc.data();
+
+      // Pretty-print JSON
+      output.innerText = JSON.stringify(data, null, 2);
+
+    } catch (e) {
+      output.innerText = "Error loading team: " + e;
+    }
+  }
+</script>
+
+</body>
+</html>
