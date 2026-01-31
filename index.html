@@ -254,7 +254,7 @@
 <body>
   <div class="container">
     <header>
-      <h1>⚡ SplitStorm Team Viewer</h1>
+      <h1>⚡ Splitstorm Team Lookup</h1>
       <p class="header-subtitle">View team splits and runner performance data</p>
       
       <div class="search-section">
@@ -394,15 +394,18 @@
       }
 
       try {
+        console.log("Searching for team code:", teamCode.toLowerCase());
         const snap = await db.collection("teams").doc(teamCode.toLowerCase()).get();
 
         if (!snap.exists) {
-          showError("Team not found. Check your team code and try again.");
+          console.log("Team document does not exist");
+          showError(`Team "${teamCode}" not found. Verify the code and try again.`);
           container.innerHTML = '';
           return;
         }
 
         const teamData = snap.data();
+        console.log("Team data loaded:", teamData);
         const splits = teamData.shared_splits || [];
 
         if (splits.length === 0) {
@@ -411,8 +414,8 @@
           renderSplits(splits);
         }
       } catch (err) {
-        console.error(err);
-        showError("Failed to load team data. Please try again.");
+        console.error("Firebase error:", err);
+        showError(`Error: ${err.message}`);
         container.innerHTML = '';
       }
     }
