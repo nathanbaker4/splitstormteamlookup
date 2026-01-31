@@ -1,108 +1,137 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Team Viewer</title>
+  <meta charset="UTF-8" />
+  <title>SplitStorm – Team Viewer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #1e1e1e;
-      color: white;
+      font-family: system-ui, sans-serif;
+      background: #0f172a;
+      color: #e5e7eb;
+      display: flex;
+      justify-content: center;
       padding: 40px;
     }
-    #container {
-      max-width: 500px;
-      margin: auto;
-      background: #2a2a2a;
-      padding: 20px;
-      border-radius: 10px;
-    }
-    input {
+
+    .card {
+      background: #020617;
+      padding: 24px;
+      border-radius: 12px;
       width: 100%;
-      padding: 10px;
-      margin-top: 10px;
-      border-radius: 6px;
+      max-width: 600px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+
+    input, button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 12px;
+      border-radius: 8px;
       border: none;
       font-size: 16px;
     }
+
+    input {
+      background: #020617;
+      color: #e5e7eb;
+      border: 1px solid #334155;
+    }
+
     button {
-      margin-top: 15px;
-      width: 100%;
-      padding: 10px;
-      background: #4caf50;
-      border: none;
-      border-radius: 6px;
-      color: white;
-      font-size: 18px;
+      background: #38bdf8;
+      color: #020617;
+      font-weight: 600;
       cursor: pointer;
     }
-    #output {
-      margin-top: 20px;
-      padding: 15px;
-      background: #333;
+
+    button:hover {
+      background: #0ea5e9;
+    }
+
+    pre {
+      background: #020617;
+      border: 1px solid #334155;
+      padding: 16px;
       border-radius: 8px;
-      white-space: pre-wrap;
+      margin-top: 16px;
+      overflow-x: auto;
+    }
+
+    .error {
+      color: #f87171;
+      margin-top: 12px;
     }
   </style>
 </head>
 <body>
+  <div class="card">
+    <h2>Team Data Viewer</h2>
 
-<div id="container">
-  <h1>Team Viewer</h1>
-  <p>Enter a team code to view its data.</p>
+    <input
+      id="teamCode"
+      placeholder="Enter team code"
+      autocomplete="off"
+    />
 
-  <input id="teamCodeInput" placeholder="Team code">
-  <button id="viewTeamBtn">View Team</button>
+    <button onclick="loadTeam()">View Team</button>
 
-  <div id="output"></div>
-</div>
+    <div id="error" class="error"></div>
+    <pre id="output"></pre>
+  </div>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyDVId5l4TinAp06bZA8gId1kZ88ittf8c0",
-    authDomain: "splitstorm1.firebaseapp.com",
-    projectId: "splitstorm1",
-    storageBucket: "splitstorm1.firebasestorage.app",
-    messagingSenderId: "1020688870854",
-    appId: "1:1020688870854:web:123fef34436238b9b056c7",
-    measurementId: "G-VKB2V4KZ12"
-  };
+    const firebaseConfig = {
+      apiKey: "AIzaSyDVId5l4TinAp06bZA8gId1kZ88ittf8c0",
+      authDomain: "splitstorm1.firebaseapp.com",
+      projectId: "splitstorm1",
+      storageBucket: "splitstorm1.firebasestorage.app",
+      messagingSenderId: "1020688870854",
+      appId: "1:1020688870854:web:123fef34436238b9b056c7",
+      measurementId: "G-VKB2V4KZ12"
+    };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-  const button = document.getElementById("viewTeamBtn");
-  const output = document.getElementById("output");
+    window.loadTeam = async () => {
+      const teamCode = document.getElementById("teamCode").value.trim();
+      const output = document.getElementById("output");
+      const error = document.getElementById("error");
 
-  button.addEventListener("click", async () => {
-    const code = document.getElementById("teamCodeInput").value.trim();
+      output.textContent = "";
+      error.textContent = "";
 
-    if (!code) {
-      output.innerText = "Please enter a team code.";
-      return;
-    }
-
-    output.innerText = "Loading...";
-
-    try {
-      const ref = doc(db, "teams", code);
-      const snap = await getDoc(ref);
-
-      if (!snap.exists()) {
-        output.innerText = "Team not found.";
+      if (!teamCode) {
+        error.textContent = "Please enter a team code.";
         return;
       }
 
-      output.innerText = JSON.stringify(snap.data(), null, 2);
-    } catch (e) {
-      output.innerText = "Error loading team: " + e.message;
-      console.error(e);
-    }
-  });
-</script>
+      try {
+        // 🔧 CHANGE "teams" if your collection name is different
+        const ref = doc(db, "teams", teamCode);
+        const snap = await getDoc(ref);
 
+        if (!snap.exists()) {
+          error.textContent = "No team found with that code.";
+          return;
+        }
+
+        output.textContent = JSON.stringify(snap.data(), null, 2);
+      } catch (err) {
+        console.error(err);
+        error.textContent = "Failed to load team data.";
+      }
+    };
+  </script>
 </body>
 </html>
