@@ -277,7 +277,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-  <script>
+    <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDVId5l4TinAp06bZA8gId1kZ88ittf8c0",
       authDomain: "splitstorm1.firebaseapp.com",
@@ -380,55 +380,51 @@
       `;
     }
 
+    // Auto-capitalize as user types
     document.getElementById("teamCode").addEventListener("input", (e) => {
-    e.target.value = e.target.value.toUpperCase();
-  });
+      e.target.value = e.target.value.toUpperCase();
+    });
 
     async function loadTeam() {
-    const teamCode = document.getElementById("teamCode").value.trim().toUpperCase();
-    const container = document.getElementById("splitsContainer");
-    const errorDiv = document.getElementById("errorMessage");
+      const teamCode = document.getElementById("teamCode").value.trim().toUpperCase();
+      const container = document.getElementById("splitsContainer");
+      const errorDiv = document.getElementById("errorMessage");
 
-    errorDiv.classList.remove("show");
-    container.innerHTML = '<div class="loading">Loading...</div>';
+      errorDiv.classList.remove("show");
+      container.innerHTML = '<div class="loading">Loading...</div>';
 
-    if (!teamCode) {
-      showError("Please enter a team code.");
-      container.innerHTML = '';
-      return;
-    }
-
-    try {
-      console.log("Searching for team code:", teamCode);
-      const snap = await db.collection("teams").doc(teamCode).get();
-
-      if (!snap.exists) {
-        console.log("Team document does not exist");
-        showError(`Team "${teamCode}" not found. Verify the code and try again.`);
+      if (!teamCode) {
+        showError("Please enter a team code.");
         container.innerHTML = '';
         return;
       }
 
-      const teamData = snap.data();
-      console.log("Team data loaded:", teamData);
-      const splits = teamData.shared_splits || [];
+      try {
+        console.log("Searching for team code:", teamCode);
+        const snap = await db.collection("teams").doc(teamCode).get();
 
-      if (splits.length === 0) {
-        container.innerHTML = '<div class="no-data">This team has not shared any splits yet.</div>';
-      } else {
-        renderSplits(splits);
+        if (!snap.exists) {
+          console.log("Team document does not exist");
+          showError(`Team "${teamCode}" not found. Verify the code and try again.`);
+          container.innerHTML = '';
+          return;
+        }
+
+        const teamData = snap.data();
+        console.log("Team data loaded:", teamData);
+        const splits = teamData.shared_splits || [];
+
+        if (splits.length === 0) {
+          container.innerHTML = '<div class="no-data">This team has not shared any splits yet.</div>';
+        } else {
+          renderSplits(splits);
+        }
+      } catch (err) {
+        console.error("Firebase error:", err);
+        showError(`Error: ${err.message}`);
+        container.innerHTML = '';
       }
-    } catch (err) {
-      console.error("Firebase error:", err);
-      showError(`Error: ${err.message}`);
-      container.innerHTML = '';
     }
-  }
-
-  // Allow Enter key to load team
-  document.getElementById("teamCode").addEventListener("keypress", (e) => {
-    if (e.key === "Enter") loadTeam();
-  });
 
     // Allow Enter key to load team
     document.getElementById("teamCode").addEventListener("keypress", (e) => {
