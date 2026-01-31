@@ -52,7 +52,8 @@
   <p>Enter a team code to view its data.</p>
 
   <input id="teamCodeInput" placeholder="Team code">
-  <button onclick="loadTeam()">View Team</button>
+  <button id="viewTeamBtn">View Team</button>
+
 
   <div id="output"></div>
 </div>
@@ -75,10 +76,14 @@
     measurementId: "G-VKB2V4KZ12"
   };
 
+  // ✅ Initialize Firebase FIRST
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  window.loadTeam = async function () {
+  // ✅ Add event listener AFTER db exists
+  document.getElementById("viewTeamBtn").addEventListener("click", loadTeam);
+
+  async function loadTeam() {
     const code = document.getElementById("teamCodeInput").value.trim();
     const output = document.getElementById("output");
 
@@ -102,8 +107,9 @@
     } catch (e) {
       output.innerText = "Error loading team: " + e.message;
     }
-  };
+  }
 </script>
+
 
 
 </body>
