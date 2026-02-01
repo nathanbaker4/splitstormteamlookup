@@ -235,6 +235,29 @@
       padding: 20px;
       color: #64748b;
     }
+    .advanced-btn {
+  margin-bottom: 10px;
+  padding: 8px 14px;
+  background: #444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.advanced-container.hidden {
+  display: none;
+}
+
+.advanced-container {
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #f7f7f7;
+}
+
 
     @media (max-width: 768px) {
       .search-section {
@@ -249,6 +272,7 @@
         grid-template-columns: 1fr;
       }
     }
+    
   </style>
 </head>
 <body>
@@ -267,6 +291,26 @@
         />
         <button id="loadBtn" onclick="loadTeam()">Load Team</button>
       </div>
+      <div id="filtersSection" style="display: none;">
+        <button id="advancedToggle" class="advanced-btn">Advanced ▾</button>
+
+        <div id="advancedFilters" class="advanced-container hidden">
+          <div class="search-section">
+            <input id="filterName" placeholder="Filter by runner name" />
+            <input id="filterDistance" placeholder="Filter by distance (e.g. 5K)" />
+            <input id="filterFromDate" type="date" />
+            <input id="filterToDate" type="date" />
+            <button onclick="applyFilters()">Apply Filters</button>
+            <button onclick="renderSplits(currentTeamData)">Reset</button>
+          </div>
+        </div>
+        
+
+  <div class="search-section" style="margin-top: 8px;">
+    <button onclick="exportCSV()">Export to Spreadsheet File</button>
+  </div>
+</div>
+
     </header>
 
     <div id="errorMessage" class="error-message"></div>
@@ -278,6 +322,21 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
     <script>
+
+function formatTotalTime(totalSeconds) {
+  totalSeconds = Number(totalSeconds);
+
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = Math.floor(totalSeconds % 60);
+  const ms = Math.round((totalSeconds - Math.floor(totalSeconds)) * 100);
+
+  const secStr = seconds.toString().padStart(2, "0");
+  const msStr = ms.toString().padStart(2, "0");
+
+  return `${minutes}:${secStr}.${msStr}`;
+}
+
+      
     const firebaseConfig = {
       apiKey: "AIzaSyDVId5l4TinAp06bZA8gId1kZ88ittf8c0",
       authDomain: "splitstorm1.firebaseapp.com",
@@ -313,72 +372,150 @@
     }
 
     function renderSplits(splits) {
-      const container = document.getElementById("splitsContainer");
-      
-      if (!splits || splits.length === 0) {
-        container.innerHTML = '<div class="no-data">No shared splits found in this team.</div>';
-        return;
-      }
+  const container = document.getElementById("splitsContainer");
 
-      container.innerHTML = splits.map(split => `
-        <div class="split-card">
-          <div class="split-header">
-            <div class="split-title">
-              <div class="race-name">${split.race_name || 'Unnamed Race'}</div>
-              <div class="race-meta">
-                <span class="race-date">📅 ${formatDate(split.race_date)}</span>
-                <span>📏 ${split.race_distance || 'Unknown Distance'}</span>
-              </div>
-            </div>
-          </div>
-          <div class="split-body">
-            ${renderRunners(split.runners || [])}
+  if (!splits || splits.length === 0) {
+    container.innerHTML = '<div class="no-data">No shared splits found in this team.</div>';
+    return;
+  }
+
+  container.innerHTML = splits.map(split => `
+    <div class="split-card">
+      <div class="split-header">
+        <div class="split-title">
+          <div class="race-name">${split.race_name || 'Unnamed Race'}</div>
+          <div class="race-meta">
+            <span class="race-date">📅 ${formatDate(split.race_date)}</span>
+            <span>📏 ${split.race_distance || 'Unknown Distance'}</span>
           </div>
         </div>
-      `).join('');
-    }
+      </div>
+      <div class="split-body">
+        ${renderRunners(split, split.runners || [])}
+      </div>
+    </div>
+  `).join('');
+}
 
-    function renderRunners(runners) {
-      if (!runners || runners.length === 0) {
-        return '<div class="no-data" style="padding: 20px;">No runners available.</div>';
-      }
 
-      return `
-        <div class="runners-grid">
-          ${runners.map(runner => `
-            <div class="runner-card">
-              <div class="runner-name">👤 ${runner.name || 'Unknown Runner'}</div>
-              <div class="runner-stats">
-                <div class="stat">
-                  <span class="stat-label">Total Time</span>
-                  <span class="stat-value">${runner.total_time || '—'}</span>
-                </div>
-                <div class="stat">
-                  <span class="stat-label">Splits</span>
-                  <span class="stat-value">${(runner.split_times || []).length}</span>
-                </div>
+    function parseTime(str) {
+  if (!str) return 0;
+
+  const [min, secMs] = str.split(":");
+  const [sec, ms] = secMs.split(".");
+
+  return (Number(min) * 60) + Number(sec) + Number(ms) / 100;
+}
+
+function renderRunners(race, runners) {
+  if (!runners || runners.length === 0) {
+    return '<div class="no-data" style="padding: 20px;">No runners available.</div>';
+  }
+
+  return `
+    <div class="runners-grid">
+      ${runners.map(runner => {
+        const splits = runner.split_times || [];
+
+        const totalTime = splits
+          .map(parseTime)
+          .reduce((a, b) => a + b, 0)
+          .toFixed(2);
+
+        return `
+          <div class="runner-card">
+            <div class="runner-name">👤 ${runner.name || 'Unknown Runner'}</div>
+            <div class="runner-stats">
+              <div class="stat">
+                <span class="stat-label">Total Time</span>
+                <span class="stat-value">${formatTotalTime(totalTime)}</span>
               </div>
-              ${renderSplitTimes(runner.split_times || [])}
             </div>
-          `).join('')}
+            ${renderSplitTimes(race, runner)}
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+function getSplitDistance(race, runner) {
+  const splitTimes = runner.split_times || [];
+  const numSplits = splitTimes.length;
+
+  if (numSplits === 0) return null;
+
+  const raceDistanceStr = race.race_distance || "";
+
+  // Relay race: format like "4x400m"
+  if (race.is_relay_race) {
+    const match = raceDistanceStr.match(/(\d+)x(\d+)/);
+    if (match) {
+      const legDistance = Number(match[2]); // e.g. 400
+      return legDistance / numSplits;      // e.g. 400/2 = 200
+    }
+  }
+
+  // Open race: "1600m"
+  const totalDistance = Number(raceDistanceStr.replace(/[^0-9]/g, ""));
+  return totalDistance / numSplits;
+}
+
+
+
+
+function renderSplitTimes(race, runner) {
+  const splitTimes = runner.split_times || [];
+  if (splitTimes.length === 0) return '';
+
+  const dist = getSplitDistance(race, runner);
+
+  return `
+    <div class="splits-list">
+      ${splitTimes.map((time, idx) => `
+        <div class="split-item">
+          <span class="split-item-label">Split ${idx + 1} (${dist}m):</span>
+          <span class="split-item-time">${time}</span>
         </div>
-      `;
+      `).join('')}
+    </div>
+  `;
+}
+
+
+    function applyFilters() {
+  const nameFilter = document.getElementById("filterName").value.toLowerCase();
+  const distanceFilter = document.getElementById("filterDistance").value.toLowerCase();
+  const fromDate = document.getElementById("filterFromDate").value;
+  const toDate = document.getElementById("filterToDate").value;
+
+  let filtered = currentTeamData.filter(split => {
+    // Distance
+    if (distanceFilter && !String(split.race_distance || "").toLowerCase().includes(distanceFilter)) {
+      return false;
     }
 
-    function renderSplitTimes(splitTimes) {
-      if (!splitTimes || splitTimes.length === 0) return '';
-
-      return `
-        <div class="splits-list">
-          ${splitTimes.map((time, idx) => `
-            <div class="split-item">
-              <span class="split-item-label">Split ${idx + 1}:</span>
-              <span class="split-item-time">${time}</span>
-            </div>
-          `).join('')}
-        </div>
-      `;
+    // Date range
+    if (fromDate || toDate) {
+      const raceDate = new Date(split.race_date);
+      if (fromDate && raceDate < new Date(fromDate)) return false;
+      if (toDate && raceDate > new Date(toDate)) return false;
     }
+
+    // Runner name
+    if (nameFilter) {
+      const match = (split.runners || []).some(r =>
+        (r.name || "").toLowerCase().includes(nameFilter)
+      );
+      if (!match) return false;
+    }
+
+    return true;
+  });
+
+  renderSplits(filtered);
+}
+
 
     // Auto-capitalize as user types
     document.getElementById("teamCode").addEventListener("input", (e) => {
@@ -386,6 +523,13 @@
     });
 
     async function loadTeam() {
+      
+      document.getElementById("filtersSection").style.display = "none";
+["filterName", "filterDistance", "filterFromDate", "filterToDate"].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.value = "";
+});
+
       const teamCode = document.getElementById("teamCode").value.trim().toUpperCase();
       const container = document.getElementById("splitsContainer");
       const errorDiv = document.getElementById("errorMessage");
@@ -404,6 +548,8 @@
         const snap = await db.collection("teams").doc(teamCode).get();
 
         if (!snap.exists) {
+          document.getElementById("filtersSection").style.display = "none";
+
           console.log("Team document does not exist");
           showError(`Team "${teamCode}" not found. Verify the code and try again.`);
           container.innerHTML = '';
@@ -413,23 +559,124 @@
         const teamData = snap.data();
         console.log("Team data loaded:", teamData);
         const splits = teamData.shared_splits || [];
+currentTeamData = splits;
 
-        if (splits.length === 0) {
-          container.innerHTML = '<div class="no-data">This team has not shared any splits yet.</div>';
-        } else {
-          renderSplits(splits);
-        }
+document.getElementById("filtersSection").style.display = "block";
+
+if (splits.length === 0) {
+  container.innerHTML = '<div class="no-data">This team has not shared any splits yet.</div>';
+} else {
+  renderSplits(splits);
+}
+
       } catch (err) {
+        document.getElementById("filtersSection").style.display = "none";
+
         console.error("Firebase error:", err);
         showError(`Error: ${err.message}`);
         container.innerHTML = '';
       }
     }
+    
+    function exportCSV() {
+  if (!currentTeamData.length) {
+    showError("No team data to export.");
+    return;
+  }
+
+  const fromDate = document.getElementById("filterFromDate").value;
+  const toDate = document.getElementById("filterToDate").value;
+
+  let rows = [
+    ["Race Location", "Race Date", "Distance", "Runner", "Total Time", "Split #", "Split Distance", "Split Time"]
+  ];
+
+  currentTeamData.forEach(race => {
+    const raceDate = new Date(race.race_date);
+
+    if (fromDate && raceDate < new Date(fromDate)) return;
+    if (toDate && raceDate > new Date(toDate)) return;
+
+    (race.runners || []).forEach(runner => {
+      const splits = runner.split_times || [];
+      const dist = getSplitDistance(race, runner);
+
+      // Compute total time
+      const totalTime = splits
+        .map(parseTime)
+        .reduce((a, b) => a + b, 0)
+        .toFixed(2);
+
+      const formattedTotal = formatTotalTime(totalTime);
+
+      if (splits.length === 0) {
+        rows.push([
+          race.race_name,
+          race.race_date,
+          race.race_distance,
+          runner.name,
+          formattedTotal,
+          "",
+          "",
+          ""
+        ]);
+      } else {
+        splits.forEach((time, idx) => {
+          const isLast = idx === splits.length - 1;
+
+          rows.push([
+            race.race_name,
+            race.race_date,
+            race.race_distance,
+            runner.name,
+            isLast ? formattedTotal : "-",   // <-- Only show total on last split
+            idx + 1,
+            `${dist}m`,
+            time
+          ]);
+        });
+      }
+    });
+  });
+
+  const csv = rows
+    .map(r => r.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","))
+    .join("\n");
+
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "splitstorm_team_export.csv";
+  a.click();
+
+  URL.revokeObjectURL(url);
+
+  if (window.navigator.msSaveOrOpenBlob) {
+    window.navigator.msSaveOrOpenBlob(blob, "splitstorm_team_export.csv");
+  }
+}
+
+
+
+
 
     // Allow Enter key to load team
     document.getElementById("teamCode").addEventListener("keypress", (e) => {
       if (e.key === "Enter") loadTeam();
     });
+
+    document.getElementById("advancedToggle").addEventListener("click", () => {
+  const container = document.getElementById("advancedFilters");
+  const btn = document.getElementById("advancedToggle");
+
+  const isHidden = container.classList.contains("hidden");
+  container.classList.toggle("hidden");
+
+  btn.textContent = isHidden ? "Advanced ▴" : "Advanced ▾";
+});
+
   </script>
 </body>
 </html>
